@@ -7,7 +7,6 @@
 class BitStream
 {
 public:
-    BitStream(std::ios & stream);
     virtual ~BitStream();
     virtual bool isGood() const =0;
     virtual bool isEOF() const =0;
@@ -17,6 +16,8 @@ public:
     virtual unsigned int GetPaddingLength() const { return m_paddingBitLength; }
     virtual void SetPaddingLength(unsigned int padd){ m_paddingBitLength = padd; }
 protected:
+    BitStream(std::ios & stream);
+    
     unsigned int m_paddingBitLength;
     unsigned int m_currentBitNum;
     std::ios & m_stream;
