@@ -22,13 +22,13 @@ void HuffmanCodec::Init(const std::string & inputFile, const std::string & outpu
         this->m_asciiCount[i] = 0;
     }
 
-    this->m_inputFileStream = std::ifstream(inputFile, std::ofstream::binary);
+    this->m_inputFileStream.open(inputFile, std::ifstream::binary);
     if (!this->m_inputFileStream.is_open())
     {
         throw std::ifstream::failure("Could not open the input file");
     }
 
-    this->m_outputFileStream = std::ofstream(outputFile, std::ofstream::binary);
+    this->m_outputFileStream.open(outputFile, std::ofstream::binary);
     if (!this->m_outputFileStream .is_open())
     {
         throw std::ifstream::failure("Could not open the output file");
