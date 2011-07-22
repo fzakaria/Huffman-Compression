@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "bitstream.h"
 
 
 #define ASCII_LENGTH 256
@@ -27,7 +28,7 @@ protected:
     virtual std::string GetHuffmanCode(char data);
     virtual std::istream & GetInputStream(bool reset = true);
 
-    virtual void WriteBufferToFile(const std::vector<unsigned char> & buffer);
+    virtual void WriteBufferToFile(const OutputBitStream & bs);
 
     std::ifstream m_inputFileStream;
     std::ofstream m_outputFileStream;

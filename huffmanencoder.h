@@ -15,11 +15,11 @@ public:
 
 protected:
     virtual void Encode();
-    virtual void WriteBufferToFile(const BitStream & bs);
+    virtual void WriteBufferToFile(const OutputBitStream & bs);
     virtual void BuildASCIICount();
 private:
     void BuildEncodedFile();
-    void WriteHeaderToFile(const BitStream & bs);
+    void WriteHeaderToFile(const OutputBitStream & bs);
 };
 
 #endif

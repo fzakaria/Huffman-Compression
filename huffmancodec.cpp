@@ -69,14 +69,9 @@ std::istream & HuffmanCodec::GetInputStream(bool reset)
     return this->m_inputFileStream;
 }
 
-void HuffmanCodec::WriteBufferToFile(const std::vector<unsigned char> & buffer)
+void HuffmanCodec::WriteBufferToFile(const OutputBitStream & bs)
 {
-    //can't just do a write because vector isn't guaranteed to be done as array
-    for (int i = 0 ; i < buffer.size(); ++i)
-    {
-        unsigned char curr_char =  buffer[i];
-        this->m_outputFileStream.put(curr_char);
-    }
+    this->m_outputFileStream << bs;
     this->m_outputFileStream.flush();
     this->m_outputFileStream.close();
 }

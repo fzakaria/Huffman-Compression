@@ -28,29 +28,30 @@ void HuffmanEncoder::Encode()
 
 void HuffmanEncoder::BuildEncodedFile()
 {
-    std::istream & buffer = this->GetInputStream();
+    std::istream & inputStream = this->GetInputStream();
+    std::stringstream tempStream; //we need to write it to a temporary stream so that we can write header first
     char current_char;
-    BitStream bstream(BitStream::WRITING);
+    OutputBitStream outBitStream(tempStream);
 
-    while (buffer.good())
+    while (inputStream.good())
     {
-         buffer.get(current_char);
-         if (buffer.eof())
+         inputStream.get(current_char);
+         if (inputStream.eof())
              break;
          std::string binaryCode = this->GetHuffmanCode(current_char);
-         bstream.InsertBits(binaryCode);
+         outBitStream.InsertBits(binaryCode);
     }
-    bstream.Flush();
-    this->WriteBufferToFile(bstream);
+    outBitStream.Flush();
+    this->WriteBufferToFile(outBitStream);
 }
 
-void HuffmanEncoder::WriteBufferToFile(const BitStream & bs)
+void HuffmanEncoder::WriteBufferToFile(const OutputBitStream & bs)
 {
     this->WriteHeaderToFile(bs);
-    HuffmanCodec::WriteBufferToFile(bs.GetBuffer());
+    HuffmanCodec::WriteBufferToFile(bs);
 }
 
-void HuffmanEncoder::WriteHeaderToFile(const BitStream & bs)
+void HuffmanEncoder::WriteHeaderToFile(const OutputBitStream & bs)
 {
     this->m_outputFileStream.write( (char*)(this->m_asciiCount), sizeof(unsigned long)*ASCII_LENGTH);
     

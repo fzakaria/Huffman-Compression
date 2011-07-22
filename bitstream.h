@@ -1,35 +1,71 @@
+#ifndef BITSTREAM_H
+#define BITSTREAM_H
+
 #include <vector>
 #include <string>
-
 
 class BitStream
 {
 public:
-    enum TYPE
-    {
-        READING,
-        WRITING,
-    };
-    BitStream(TYPE type);
+    BitStream(std::ios & stream);
+    virtual ~BitStream();
+    virtual bool isGood() const =0;
+    virtual bool isEOF() const =0;
+
+    virtual std::ios & GetStream() const { return m_stream; }
+
+    virtual unsigned int GetPaddingLength() const { return m_paddingBitLength; }
+    virtual void SetPaddingLength(unsigned int padd){ m_paddingBitLength = padd; }
+protected:
+    unsigned int m_paddingBitLength;
+    unsigned int m_currentBitNum;
+    std::ios & m_stream;
+    unsigned char m_currentByte;
+private:
+    BitStream();
+    BitStream(const BitStream& copy);
+
+};
+
+class OutputBitStream: public BitStream
+{
+public:
+    OutputBitStream(std::ostream & stream);
+    virtual ~OutputBitStream();
+
     virtual void InsertBits(std::string bits);
     virtual void InsertBit(char bit); //only will recognize '0' or '1'
-    virtual void InsertBit(unsigned int bit); //only recognizes if it is 0 or one
+    virtual void InsertBit(unsigned int bit);//only recognizes 0 or non 0
     virtual void Flush();
-    virtual bool isGood();
 
-    virtual std::vector<unsigned char> GetBuffer() const { return this->m_buffer; }
-    virtual unsigned int GetPaddingLength() const { return (7 - this->m_currentBitNum); }
-    virtual void SetPaddingLength(unsigned int padd){ this->m_paddingLength = padd; }
-    virtual std::string GetNextBit();
-    virtual void SetInputStream(std::istream & ss) { this->m_stringstream = &ss; }
+    virtual bool isGood() const { return m_stream.good(); }
+    virtual bool isEOF() const { return m_stream.eof(); }
 
+    virtual std::ostream & GetStream() const { return dynamic_cast<std::ostream&>(m_stream); }
+
+    friend std::ostream & operator<< (std::ostream &, const OutputBitStream &);
 private:
-    void UpdateState();
+    OutputBitStream();
+    OutputBitStream(const OutputBitStream& copy);
 
-    TYPE m_type;
-    std::istream * m_stringstream;
-    unsigned int m_paddingLength;
-    unsigned int m_currentBitNum;
-    unsigned char m_currentByte;
-    std::vector<unsigned char> m_buffer;
 };
+
+class InputBitStream: public BitStream
+{
+public:
+    InputBitStream(std::istream & stream);
+    virtual ~InputBitStream();
+
+    virtual std::string GetNextBit();
+
+    virtual bool isGood() const;
+    virtual bool isEOF() const;
+
+    virtual std::istream & GetStream() const { return dynamic_cast<std::istream&>(m_stream); }
+private:
+    virtual void Consume();
+    InputBitStream();
+    InputBitStream(const InputBitStream& copy);
+};
+
+#endif

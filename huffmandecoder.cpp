@@ -30,18 +30,17 @@ void HuffmanDecoder::Decode()
 void HuffmanDecoder::BuildDecodedFile()
 {
     std::istream & buffer = this->GetInputStream(false); //don't reset where we left off
-    BitStream bitstream(BitStream::READING);
+    InputBitStream inBitStream(buffer);
     unsigned int padding;
     buffer.read((char*)&padding, sizeof(padding));
-    bitstream.SetInputStream(buffer);
-    bitstream.SetPaddingLength(padding);
+    inBitStream.SetPaddingLength(padding);
     std::map<std::string, std::string>::iterator it;
     std::string currentCode = "";
 
-    while (buffer.good())
+    while (inBitStream.isGood())
     {
-        currentCode += bitstream.GetNextBit();
-        if (buffer.eof())
+        currentCode += inBitStream.GetNextBit();
+        if (inBitStream.isEOF())
             break;
 
         it = this->m_huffmanCodes.find(currentCode);
@@ -49,6 +48,10 @@ void HuffmanDecoder::BuildDecodedFile()
         {//code exists!
             std::string decodedChar = it->second;
             currentCode = "";
+            if (decodedChar == "f")
+            {
+                //std::cout << "here";
+            }
             this->m_outputFileStream << decodedChar;
         }
     }

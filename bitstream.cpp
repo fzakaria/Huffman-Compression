@@ -2,29 +2,28 @@
 #include <iostream>
 #include <sstream>
 
-BitStream::BitStream(TYPE type): m_type(type), m_paddingLength(0)
+BitStream::BitStream(std::ios & stream): m_stream(stream), m_paddingBitLength(0), m_currentBitNum(0), m_currentByte(0)
 {
-    switch (m_type)
-    {
-    case READING:
-        {
-            this->m_currentBitNum = 8;
-            this->m_currentByte = 0;
-            break;
-        }
-    case WRITING:
-        {
-            this->m_currentBitNum = 0;
-            this->m_currentByte = 0;
-            break;
-        }
-    default:
-        break;
-    }
 
 }
 
-void BitStream::InsertBits(std::string bits)
+BitStream::~BitStream()
+{
+
+}
+
+OutputBitStream::OutputBitStream(std::ostream & stream): BitStream(stream)
+{
+
+}
+
+
+OutputBitStream::~OutputBitStream()
+{
+
+}
+
+void OutputBitStream::InsertBits(std::string bits)
 {
     for (unsigned int i = 0 ; i < bits.length(); i++)
     {
@@ -33,99 +32,74 @@ void BitStream::InsertBits(std::string bits)
     }
 }
 
-void BitStream::InsertBit(char bit)
+void OutputBitStream::InsertBit(char bit)
 {
-    if (bit != '0' && bit != '1')
-    {
-        std::cerr << "Invalid Bit character given" << std::endl;
-        return;
-    }
+    if (bit != '0' && bit != '1')//warning
+       std::cerr << "Invalid Bit character given: " << bit <<  std::endl;
 
     if (bit == '0')
-    {
         this->InsertBit((unsigned int)0);
-    }
     else
-    {
         this->InsertBit((unsigned int)1);
-    }
 
 }
 
-void BitStream::InsertBit(unsigned int bit)
+void OutputBitStream::InsertBit(unsigned int bit)
 {
     bit &= 1; //sanity check to make sure it is only 0 or 1
     bit = bit << (7 - this->m_currentBitNum); //lets move the bit to the current position (if it's a one it matters onl)
     this->m_currentBitNum += 1;
     this->m_currentByte |= bit;
-
+    this->m_paddingBitLength = 8 - this->m_currentBitNum;
     if (this->m_currentBitNum > 7)
     {
-        this->UpdateState();
+        this->Flush();
     }
+
 }
 
-void BitStream::Flush()
+void OutputBitStream::Flush()
 {
-    this->m_buffer.push_back(this->m_currentByte);
-    this->m_currentByte = 0;
+    if (this->m_currentBitNum != 0)
+    {
+        this->GetStream() << this->m_currentByte;
+        this->GetStream().flush();
+        this->m_currentByte = 0;
+        this->m_currentBitNum = 0;
+    }
 }
 
-void BitStream::UpdateState()
+std::ostream & operator<< (std::ostream & os, const OutputBitStream & bitStream)
 {
-    switch (this->m_type)
-    {
-    case READING:
-        {
-            char curr_char;
-            this->m_stringstream->get(curr_char);
-            this->m_currentByte = curr_char;
-            this->m_currentBitNum = 0;
-            break;
-        }
-    case WRITING:
-        {
-            this->m_currentBitNum = 0;
-            this->Flush();
-            break;
-        }
-    default:
-        break;
-    }
+    os << bitStream.m_stream.rdbuf();
+    return os;
 }
 
-bool BitStream::isGood()
+
+InputBitStream::InputBitStream(std::istream & stream): BitStream(stream)
 {
-    if (this->m_type == WRITING)
-        return true;
+    this->m_currentBitNum = 8;
+}
 
-    if (this->m_currentBitNum > 7)
-    {
-        this->UpdateState();
-    }
-
-    this->m_stringstream->peek();
-    bool streamState = this->m_stringstream->good();
-    if (!streamState)
-    {
-        int a = 1;
-    }
-    bool paddingReached = this->m_paddingLength >= (7 - this->m_currentBitNum);
-    return streamState || !paddingReached;
+InputBitStream::~InputBitStream()
+{
 
 }
 
-std::string BitStream::GetNextBit()
+void InputBitStream::Consume()
+{
+    //Unsure why >> is different than get(). Something with my use of unsigned but I still don't understand.
+    //>> was reading hex values of 0x0A as 0x6F... weird.
+    //this->GetStream() >> this->m_currentByte;
+    this->GetStream().get((char&)this->m_currentByte);
+    this->m_currentBitNum = 0;
+}
+
+std::string InputBitStream::GetNextBit()
 {
     if (this->m_currentBitNum > 7)
     {
-        this->UpdateState();
-    }
-
-    this->m_stringstream->peek();
-    if (this->m_stringstream->eof() && (this->m_paddingLength < (7 - this->m_currentBitNum)) )
-    {
-        this->m_stringstream->clear();
+        this->Consume();
     }
 
     int bit = this->m_currentByte >> (7 - this->m_currentBitNum);
@@ -140,4 +114,23 @@ std::string BitStream::GetNextBit()
     {
         return "0";
     }
+}
+
+bool InputBitStream::isGood()const
+{
+    return !this->isEOF();
+}
+
+bool InputBitStream::isEOF() const
+{
+    //First peek, because if we are at last byte not counting EOF we want flag to be raised
+    this->GetStream().peek();
+    bool endOfFile = this->GetStream().eof();
+    bool pastPadding = this->m_paddingBitLength > (8 - this->m_currentBitNum);
+    //if we are EOF and past padding, then we are truly EOF
+    if (endOfFile && !pastPadding)
+    {
+        this->GetStream().clear(); //clear the EOF bit since we have few more bits to process
+    }
+    return this->GetStream().eof(); 
 }
