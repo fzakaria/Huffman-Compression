@@ -48,10 +48,6 @@ void HuffmanDecoder::BuildDecodedFile()
         {//code exists!
             std::string decodedChar = it->second;
             currentCode = "";
-            if (decodedChar == "f")
-            {
-                //std::cout << "here";
-            }
             this->m_outputFileStream << decodedChar;
         }
     }
