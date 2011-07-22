@@ -17,7 +17,7 @@ public:
     virtual void SetPaddingLength(unsigned int padd){ m_paddingBitLength = padd; }
 protected:
     BitStream(std::ios & stream);
-    
+
     unsigned int m_paddingBitLength;
     unsigned int m_currentBitNum;
     std::ios & m_stream;
